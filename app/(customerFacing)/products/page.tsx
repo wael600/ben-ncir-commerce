@@ -1,6 +1,6 @@
 "use client";
 import { ProductCard } from "@/components/ui/ProductCard";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 
 const CATEGORIES = [
@@ -28,7 +28,7 @@ function ProductCardSkeleton() {
     );
 }
 
-export default function ProductsPage() {
+function ProductsContent() {
     const [products, setProducts] = useState<any[]>([]);
     const [category, setCategory] = useState("Tous");
     const [loading, setLoading] = useState(true);
@@ -58,8 +58,6 @@ export default function ProductsPage() {
             {search && (
                 <p className="text-gray-500 text-sm">Results for: <strong>{search}</strong></p>
             )}
-
-            {/* Categories */}
             <div className="flex flex-wrap gap-2 justify-center">
                 {CATEGORIES.map(cat => (
                     <button
@@ -75,8 +73,6 @@ export default function ProductsPage() {
                     </button>
                 ))}
             </div>
-
-            {/* Products Grid */}
             {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {[...Array(6)].map((_, i) => <ProductCardSkeleton key={i} />)}
@@ -91,5 +87,17 @@ export default function ProductsPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function ProductsPage() {
+    return (
+        <Suspense fallback={
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-6">
+                {[...Array(6)].map((_, i) => <ProductCardSkeleton key={i} />)}
+            </div>
+        }>
+            <ProductsContent />
+        </Suspense>
     );
 }
