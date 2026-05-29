@@ -7,6 +7,7 @@
     "build": "cross-env NODE_OPTIONS='--max-old-space-size=4096' next build",
     "start": "cross-env NODE_OPTIONS='--max-old-space-size=4096' next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "email": "copy .env.local .\\node_modules\\react-email\\.env & npx react-email dev --dir src/email --port 3001"
   },
   "dependencies": {
