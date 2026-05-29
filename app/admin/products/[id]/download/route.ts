@@ -1,26 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/src/db";
 import { notFound } from "next/navigation";
-import fs from "fs/promises";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-    
-    const product = await db.product.findUnique({
-        where: { id },
-        select: { filePath: true, name: true }
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const downloadVerification = await db.downloadVerification.findUnique({
+      where: { id: params.id },
+      select: {
+        product: {
+          select: { filePath: true, name: true }
+        },
+        expiresAt: true
+      }
     });
-    
-    if (product == null) return notFound();
-    
-    const { size } = await fs.stat(product.filePath);
-    const file = await fs.readFile(product.filePath);
-    const extension = product.filePath.split(".").pop();
-    
-    return new NextResponse(file, {
-        headers: {
-            "Content-Disposition": `attachment; filename="${product.name}.${extension}"`,
-            "Content-Length": size.toString(),
-        }
+
+    if (!downloadVerification || downloadVerification.expiresAt < new Date()) {
+      return notFound();
+    }
+
+    return NextResponse.json({ 
+      filePath: downloadVerification.product.filePath 
     });
+  } catch (error) {
+    console.error("Download error:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
 }
