@@ -57,7 +57,7 @@ async function OrdersTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {orders.map(order => (
+        {orders.map((order: any) => (
           <TableRow key={order.id}>
             <TableCell>{order.product.name}</TableCell>
             <TableCell>{order.user.email}</TableCell>
