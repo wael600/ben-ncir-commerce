@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { promises as fs } from "fs";
 import db from "@/src/db";
 
 export async function GET(
-    req: Request,
-    { params }: { params: { downloadVerificationId: string } }
+    req: NextRequest,
+    { params }: { params: Promise<{ downloadVerificationId: string }> }
 ) {
-    const { downloadVerificationId } = params;
+    const { downloadVerificationId } = await params;
 
     const data = await db.downloadVerification.findUnique({
         where: { id: downloadVerificationId, expiredAt: { gt: new Date() } },
@@ -29,5 +29,3 @@ export async function GET(
         },
     });
 }
-
-
