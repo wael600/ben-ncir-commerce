@@ -61,7 +61,7 @@ async function UsersTable() {
             <TableCell>{formatNumber(user.orders.length)}</TableCell>
             <TableCell>
               {formatPrice(
-                user.orders.reduce((sum, o) => o.pricePaidInCents + sum, 0) /
+                user.orders.reduce((sum: number, o: any) => o.pricePaidInCents + sum, 0) /
                   100
               )}
             </TableCell>
