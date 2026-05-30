@@ -25,34 +25,34 @@ export function ProductCard({ id, name, priceInCents, description, imagePath }: 
     const isValidImage = fixedImagePath && fixedImagePath.trim() !== "";
 
     return (
-        <Card className="flex overflow-hidden flex-col w-48">
-            <div className="relative w-full h-28 bg-gray-100">
+        <Card className="flex overflow-hidden flex-col">
+            <div className="relative w-full h-56 bg-gray-100">
                 {isValidImage ? (
                     <Image
                         src={fixedImagePath}
                         fill
                         alt={name}
-                        className="object-cover"
-                        sizes="192px"
+                        className="object-contain p-2"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         loading="eager"
                     />
                 ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                    <div className="w-full h-full flex items-center justify-center text-gray-400">
                         No image
                     </div>
                 )}
             </div>
-            <CardHeader className="p-2">
-                <CardTitle className="text-xs">{name}</CardTitle>
-                <CardDescription suppressHydrationWarning className="text-xs">
+            <CardHeader className="p-3">
+                <CardTitle className="text-base font-bold">{name}</CardTitle>
+                <CardDescription suppressHydrationWarning className="text-sm font-semibold text-green-600">
                     {formatPrice(priceInCents / 100)}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow p-2 pt-0">
-                <p className="line-clamp-2 text-xs text-gray-500">{description || "No description available"}</p>
+            <CardContent className="flex-grow p-3 pt-0">
+                <p className="line-clamp-2 text-sm text-gray-500">{description || ""}</p>
             </CardContent>
-            <CardFooter className="p-2">
-                <Button asChild size="sm" className="w-full bg-green-600 hover:bg-green-700 text-xs">
+            <CardFooter className="p-3">
+                <Button asChild size="sm" className="w-full bg-green-600 hover:bg-green-700">
                     <Link href={`/products/${id}/purchase`}>Buy Now</Link>
                 </Button>
             </CardFooter>
