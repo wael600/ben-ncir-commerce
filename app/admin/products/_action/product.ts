@@ -4,42 +4,39 @@ import db from "@/src/db";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import crypto from "crypto";
 
-const cloudinaryModule = require("cloudinary");
-const cloudinary = cloudinaryModule.v2;
-
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-async function uploadToCloudinary(file: File, folder: string): Promise<string> {
+async function uploadToCloudinary(file: File): Promise<string> {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      { folder, resource_type: "auto" },
-      (error: any, result: any) => {
-        if (error) reject(error);
-        else resolve(result.secure_url);
-      }
-    );
-    stream.end(buffer);
-  });
-}
+  const base64 = buffer.toString("base64");
+  const dataUri = `data:${file.type};base64,${base64}`;
 
-async function deleteFromCloudinary(url: string) {
-  if (!url || !url.includes("cloudinary")) return;
-  try {
-    const parts = url.split("/");
-    const filename = parts[parts.length - 1].split(".")[0];
-    const folder = parts[parts.length - 2];
-    await cloudinary.uploader.destroy(`${folder}/${filename}`, { resource_type: "raw" });
-    await cloudinary.uploader.destroy(`${folder}/${filename}`, { resource_type: "image" });
-  } catch (e) {
-    console.error("Cloudinary delete error:", e);
-  }
+  const timestamp = Math.round(Date.now() / 1000);
+  const apiKey = process.env.CLOUDINARY_API_KEY!;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET!;
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME!;
+
+  const signature = crypto
+    .createHash("sha256")
+    .update(`folder=ben-ncir&timestamp=${timestamp}${apiSecret}`)
+    .digest("hex");
+
+  const formData = new FormData();
+  formData.append("file", dataUri);
+  formData.append("timestamp", timestamp.toString());
+  formData.append("api_key", apiKey);
+  formData.append("signature", signature);
+  formData.append("folder", "ben-ncir");
+
+  const res = await fetch(
+    `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+    { method: "POST", body: formData }
+  );
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error.message);
+  return data.secure_url;
 }
 
 const fileSchema = z.instanceof(File, { message: "File is required" });
@@ -67,8 +64,8 @@ export async function addProduct(prevState: unknown, formData: FormData) {
   }
 
   const data = result.data;
-  const filePath = await uploadToCloudinary(data.File, "ben-ncir/files");
-  const imagePath = await uploadToCloudinary(data.image, "ben-ncir/images");
+  const filePath = await uploadToCloudinary(data.File);
+  const imagePath = await uploadToCloudinary(data.image);
 
   await db.product.create({
     data: {
@@ -95,15 +92,8 @@ export async function toggleProductAvailability(id: string, isAvailableForPurcha
 }
 
 export async function deleteProduct(id: string) {
-  const product = await db.product.delete({
-    where: { id }
-  });
-
+  const product = await db.product.delete({ where: { id } });
   if (!product) throw new Error("Product not found");
-
-  await deleteFromCloudinary(product.filePath);
-  await deleteFromCloudinary(product.imagePath);
-
   revalidatePath("/admin/products");
   redirect("/admin/products");
 }
@@ -122,13 +112,11 @@ export async function updateProduct(id: string, prevState: unknown, formData: Fo
   let imagePath = product.imagePath;
 
   if (data.File && data.File.size > 0) {
-    await deleteFromCloudinary(product.filePath);
-    filePath = await uploadToCloudinary(data.File, "ben-ncir/files");
+    filePath = await uploadToCloudinary(data.File);
   }
 
   if (data.image && data.image.size > 0) {
-    await deleteFromCloudinary(product.imagePath);
-    imagePath = await uploadToCloudinary(data.image, "ben-ncir/images");
+    imagePath = await uploadToCloudinary(data.image);
   }
 
   await db.product.update({
