@@ -4,7 +4,9 @@ import db from "@/src/db";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-const cloudinary = require("cloudinary").v2;
+
+const cloudinaryModule = require("cloudinary");
+const cloudinary = cloudinaryModule.v2;
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -18,9 +20,9 @@ async function uploadToCloudinary(file: File, folder: string): Promise<string> {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { folder, resource_type: "auto" },
-      (error, result) => {
+      (error: any, result: any) => {
         if (error) reject(error);
-        else resolve(result!.secure_url);
+        else resolve(result.secure_url);
       }
     );
     stream.end(buffer);
@@ -65,7 +67,6 @@ export async function addProduct(prevState: unknown, formData: FormData) {
   }
 
   const data = result.data;
-
   const filePath = await uploadToCloudinary(data.File, "ben-ncir/files");
   const imagePath = await uploadToCloudinary(data.image, "ben-ncir/images");
 
