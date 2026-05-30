@@ -1,10 +1,10 @@
 'use server';
-
 import db from "@/src/db";
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
+import { v2 as cloudinary } from "cloudinary";
 
 async function uploadToCloudinary(file: File): Promise<string> {
   const bytes = await file.arrayBuffer();
